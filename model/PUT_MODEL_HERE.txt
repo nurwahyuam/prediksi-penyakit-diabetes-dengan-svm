@@ -1,0 +1,1 @@
+Letakkan berkas svm_diabetes_app.joblib (hasil Bagian 14A pada notebook) di folder ini.

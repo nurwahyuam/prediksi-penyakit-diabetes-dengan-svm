@@ -1,0 +1,5 @@
+flask>=3.0
+scikit-learn   # SAMAKAN versinya dengan notebook pelatihan (tercetak di sel Bagian 14A), misalnya scikit-learn==1.9.1
+joblib
+numpy
+pandas

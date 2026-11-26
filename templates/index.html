@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Deteksi Status Diabetes dengan SVM</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <h1>Deteksi Status Diabetes dengan SVM</h1>
+    <p>Demo penelitian berbasis data BRFSS 2015 (Diabetes Health Indicators)</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="notice" role="note">
+    <strong>Hanya untuk penelitian dan edukasi.</strong> Hasil ini bukan diagnosis medis dan tidak menggantikan
+    pemeriksaan oleh tenaga kesehatan. Model dilatih pada data survei Amerika Serikat dan sulit mendeteksi kelas prediabetes.
+  </div>
+
+  {% if load_error %}
+  <div class="alert error"><strong>Model belum dapat dimuat.</strong><br>{{ load_error }}</div>
+  {% endif %}
+  {% if errors.get('_model') %}
+  <div class="alert error">{{ errors['_model'] }}</div>
+  {% endif %}
+
+  {% if result %}
+  <section class="card result r{{ result.kelas }}" aria-live="polite">
+    <h2>Hasil prediksi</h2>
+    <p class="label">{{ result.label }}</p>
+    {% if result.skor %}
+    <h3>Skor keputusan model</h3>
+    <p class="small">Ini skor relatif SVM, <em>bukan probabilitas</em>. Semakin tinggi, semakin condong ke kelas tersebut.</p>
+    {% for s in result.skor %}
+      <div class="bar">
+        <span class="bn">{{ s.nama }}</span>
+        {% if s.persen is not none %}<span class="bt"><span class="bf" style="width: {{ s.persen }}%"></span></span>{% endif %}
+        <span class="bv">{{ s.nilai }}</span>
+      </div>
+    {% endfor %}
+    {% endif %}
+  </section>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('index') }}" class="card" novalidate>
+    <div class="presets">
+      <span>Isi cepat:</span>
+      <button type="button" class="ghost" data-preset="default">Nilai awal</button>
+      <button type="button" class="ghost" data-preset="risk">Contoh profil berisiko lebih tinggi</button>
+    </div>
+
+    {% for g in groups %}
+    <fieldset>
+      <legend>{{ g }}</legend>
+      <div class="grid">
+        {% for f in features if f.group == g %}
+        <div class="field{% if errors.get(f.name) %} has-error{% endif %}">
+          <label for="{{ f.name }}">{{ f.label }}</label>
+          {% if f.type == 'select' %}
+          <select id="{{ f.name }}" name="{{ f.name }}">
+            {% for code, text in f.options %}
+            <option value="{{ code }}" {% if values.get(f.name)|string in [code|string, (code|float)|string] %}selected{% endif %}>{{ text }}</option>
+            {% endfor %}
+          </select>
+          {% else %}
+          <input id="{{ f.name }}" name="{{ f.name }}" type="number" min="{{ f.min }}" max="{{ f.max }}" step="{{ f.step }}" value="{{ values.get(f.name, '') }}" required>
+          {% endif %}
+          {% if f.help %}<small>{{ f.help }}</small>{% endif %}
+          {% if errors.get(f.name) %}<span class="err">{{ errors[f.name] }}</span>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </fieldset>
+    {% endfor %}
+
+    <button type="submit" class="primary">Prediksi</button>
+  </form>
+
+  {% if info %}
+  <section class="card info">
+    <h2>Tentang model</h2>
+    <p><strong>{{ info.nama }}</strong> (tugas: {{ info.task }})</p>
+    {% if info.metrik %}
+    <p class="small">Kinerja pada data uji saat pelatihan:</p>
+    <table>
+      {% for k, v in info.metrik %}<tr><td>{{ k }}</td><td class="num">{{ v }}</td></tr>{% endfor %}
+    </table>
+    {% endif %}
+    {% for w in info.peringatan %}<p class="small warn">Peringatan pemuatan: {{ w }}</p>{% endfor %}
+  </section>
+  {% endif %}
+</main>
+
+<footer class="wrap small">Deteksi Penyakit Diabetes Menggunakan Algoritma SVM &middot; dataset BRFSS 2015</footer>
+
+<script>
+  const PRESETS = {
+    "default": {{ defaults|tojson }},
+    "risk": {"Sex":1,"Age":10,"BMI":34,"HighBP":1,"HighChol":1,"CholCheck":1,"Stroke":0,"HeartDiseaseorAttack":0,
+             "DiffWalk":1,"GenHlth":4,"MentHlth":5,"PhysHlth":10,"Smoker":1,"PhysActivity":0,"Fruits":0,"Veggies":1,
+             "HvyAlcoholConsump":0,"AnyHealthcare":1,"NoDocbcCost":0,"Education":4,"Income":4}
+  };
+  document.querySelectorAll("[data-preset]").forEach(btn => btn.addEventListener("click", () => {
+    const p = PRESETS[btn.dataset.preset];
+    Object.keys(p).forEach(k => { const el = document.getElementById(k); if (el) el.value = p[k]; });
+  }));
+</script>
+</body>
+</html>
