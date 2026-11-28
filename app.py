@@ -157,12 +157,56 @@ def model_info():
     for key, val in m.items():
         if key.startswith("Recall_"):
             shown.append((f"Recall {key[7:].replace('_', ' ').lower()}", f"{val:.3f}"))
+    rp = m.get("Recall_Prediabetes")
     return {"nama": BUNDLE.get("model_name", "-"), "task": BUNDLE.get("task", "-"), "metrik": shown,
+            "recall_pre": (f"{rp:.3f}".replace(".", ",") if isinstance(rp, (int, float)) else None),
             "peringatan": BUNDLE.get("_warnings", [])}
 
 
-@app.route("/", methods=["GET", "POST"])
-def index():
+TONE_NOTES = {
+    "ok": "Model memprediksi kelas ini, tetapi hasil ini tidak menyingkirkan kemungkinan diabetes. Model dapat melewatkan kasus, terutama prediabetes.",
+    "warn": "Prediksi prediabetes bersifat tidak pasti karena kelas ini sangat jarang pada data pelatihan dan sulit dikenali model. Konfirmasikan dengan pemeriksaan gula darah oleh tenaga kesehatan.",
+    "bad": "Prediksi ini bukan diagnosis. Diagnosis diabetes memerlukan pemeriksaan laboratorium oleh tenaga kesehatan, misalnya gula darah atau HbA1c.",
+}
+
+
+def tone_for(task, kelas):
+    if task == "binary":
+        return "ok" if kelas == 0 else "bad"
+    return {0: "ok", 1: "warn", 2: "bad"}.get(kelas, "ok")
+
+
+def group_counts():
+    counts = {}
+    for f in FEATURES:
+        counts[f["group"]] = counts.get(f["group"], 0) + 1
+    return counts
+
+
+# Angka dataset hasil eksplorasi pada berkas diabetes_012_health_indicators_BRFSS2015.csv
+DATASET_STATS = {"baris": "253.680", "fitur": 21, "kelas": [
+    {"nama": "Tidak diabetes", "jumlah": "213.703", "persen": 84.24, "tone": "ok"},
+    {"nama": "Prediabetes", "jumlah": "4.631", "persen": 1.83, "tone": "warn"},
+    {"nama": "Diabetes", "jumlah": "35.346", "persen": 13.93, "tone": "bad"}]}
+
+
+def page(template, active, **ctx):
+    return render_template(template, active=active, info=model_info(), load_error=LOAD_ERROR,
+                           stats=DATASET_STATS, **ctx)
+
+
+@app.route("/")
+def beranda():
+    return page("beranda.html", "beranda", groups=GROUPS, counts=group_counts())
+
+
+@app.route("/tentang")
+def tentang():
+    return page("tentang.html", "tentang")
+
+
+@app.route("/periksa", methods=["GET", "POST"])
+def periksa():
     values, errors, result = dict(DEFAULTS), {}, None
     if request.method == "POST":
         values = {f["name"]: request.form.get(f["name"], "") for f in FEATURES}
@@ -173,10 +217,19 @@ def index():
             if not errors:
                 try:
                     result = predict_row(row)
+                    result["tone"] = tone_for(BUNDLE.get("task"), result["kelas"])
+                    result["catatan"] = TONE_NOTES[result["tone"]]
                 except Exception as exc:
                     errors["_model"] = f"Prediksi gagal: {exc}"
-    return render_template("index.html", features=FEATURES, groups=GROUPS, values=values, errors=errors,
-                           result=result, info=model_info(), load_error=LOAD_ERROR, defaults=DEFAULTS)
+    presets = {"default": DEFAULTS, "risk": RISK_PRESET}
+    return page("periksa.html", "periksa", features=FEATURES, groups=GROUPS, values=values,
+                errors=errors, result=result, presets=presets)
+
+
+RISK_PRESET = {"Sex": 1, "Age": 10, "BMI": 34, "HighBP": 1, "HighChol": 1, "CholCheck": 1, "Stroke": 0,
+               "HeartDiseaseorAttack": 0, "DiffWalk": 1, "GenHlth": 4, "MentHlth": 5, "PhysHlth": 10,
+               "Smoker": 1, "PhysActivity": 0, "Fruits": 0, "Veggies": 1, "HvyAlcoholConsump": 0,
+               "AnyHealthcare": 1, "NoDocbcCost": 0, "Education": 4, "Income": 4}
 
 
 @app.route("/api/predict", methods=["POST"])

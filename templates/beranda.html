@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Beranda{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="wrap hero-in">
+    <div class="hero-text">
+      <p class="eyebrow">Demo penelitian · Machine Learning</p>
+      <h1>Kenali kemungkinan status diabetes dari <span class="grad">indikator kesehatan</span> Anda</h1>
+      <p class="lead">Aplikasi ini memakai algoritma <strong>Support Vector Machine</strong> yang dilatih pada data survei kesehatan BRFSS 2015 untuk memperkirakan apakah seseorang tergolong tidak diabetes, prediabetes, atau diabetes.</p>
+      <div class="actions">
+        <a class="btn btn-lg" href="{{ url_for('periksa') }}">Mulai periksa</a>
+        <a class="btn btn-ghost btn-lg" href="{{ url_for('tentang') }}">Pelajari penelitiannya</a>
+      </div>
+      <p class="hint">Gratis, tanpa akun, dan tanpa menyimpan data yang Anda isi.</p>
+    </div>
+    <div class="hero-art">{% include "_hero.html" %}
+      <ul class="legend" aria-label="Keterangan warna">
+        <li><i class="dot c0"></i>Tidak diabetes</li><li><i class="dot c1"></i>Prediabetes</li><li><i class="dot c2"></i>Diabetes</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="strip" aria-label="Ringkasan data">
+  <div class="wrap strip-in">
+    <div><b>{{ stats.baris }}</b><span>responden survei BRFSS 2015</span></div>
+    <div><b>{{ stats.fitur }}</b><span>indikator kesehatan</span></div>
+    <div><b>3</b><span>kelas: tidak diabetes, prediabetes, diabetes</span></div>
+    <div><b>SVM</b><span>model klasifikasi</span></div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="wrap">
+    <h2 class="sec-h">Cara kerjanya</h2>
+    <p class="sec-p">Tiga langkah singkat, tanpa pemeriksaan laboratorium.</p>
+    <ol class="steps">
+      <li><span class="num">1</span><h3>Isi indikator</h3><p>Jawab {{ stats.fitur }} pertanyaan tentang data diri, kondisi kesehatan, gaya hidup, dan akses layanan kesehatan.</p></li>
+      <li><span class="num">2</span><h3>Model memproses</h3><p>Data Anda diskalakan lalu diklasifikasikan oleh model SVM yang dilatih pada ratusan ribu respons survei.</p></li>
+      <li><span class="num">3</span><h3>Lihat hasilnya</h3><p>Anda mendapat kelas prediksi beserta skor keputusan model, lengkap dengan catatan agar tidak salah tafsir.</p></li>
+    </ol>
+  </div>
+</section>
+
+<section class="sec alt">
+  <div class="wrap">
+    <h2 class="sec-h">Indikator yang digunakan</h2>
+    <p class="sec-p">Seluruh {{ stats.fitur }} indikator berasal dari kuesioner BRFSS.</p>
+    <div class="cards4">
+      {% for g in groups %}
+      <article class="tile">
+        <p class="tile-n">{{ counts[g] }}</p>
+        <h3>{{ g }}</h3>
+        <p class="muted">{% if loop.index == 1 %}Jenis kelamin, kategori usia, dan BMI.{% elif loop.index == 2 %}Tekanan darah, kolesterol, stroke, penyakit jantung, kesulitan berjalan, dan penilaian kesehatan umum.{% elif loop.index == 3 %}Merokok, aktivitas fisik, konsumsi buah dan sayur, serta alkohol.{% else %}Akses layanan kesehatan, kendala biaya, pendidikan, dan pendapatan.{% endif %}</p>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="wrap">
+    <h2 class="sec-h">Penting diketahui</h2>
+    <div class="cards3">
+      <article class="note"><h3>Bukan diagnosis</h3><p>Hasil adalah perkiraan statistik dari sebuah model penelitian. Diagnosis diabetes memerlukan pemeriksaan laboratorium oleh tenaga kesehatan.</p></article>
+      <article class="note"><h3>Prediabetes sulit dikenali</h3><p>Kelas prediabetes hanya {{ stats.kelas[1].persen|string|replace('.', ',') }}% dari data pelatihan.
+        {% if info and info.recall_pre %}Pada model yang aktif, <em>recall</em> prediabetes pada data uji adalah <strong>{{ info.recall_pre }}</strong>, artinya sebagian besar kasus prediabetes terlewat.{% else %}Pada eksperimen penelitian ini, model sering melewatkan kasus prediabetes.{% endif %}</p></article>
+      <article class="note"><h3>Data survei Amerika Serikat</h3><p>Model dilatih pada jawaban survei swalaporan di Amerika Serikat, sehingga belum tentu berlaku untuk populasi lain.</p></article>
+    </div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="wrap cta-in">
+    <div><h2>Coba modelnya sekarang</h2><p>Hanya butuh sekitar dua menit untuk mengisi seluruh indikator.</p></div>
+    <a class="btn btn-light btn-lg" href="{{ url_for('periksa') }}">Mulai periksa</a>
+  </div>
+</section>
+{% endblock %}

@@ -1,4 +1,4 @@
-# Aplikasi Flask: Deteksi Status Diabetes dengan SVM (BRFSS 2015)
+# Situs Flask: Deteksi Status Diabetes dengan SVM (BRFSS 2015)
 
 Antarmuka web sederhana untuk mencoba model SVM hasil notebook
 `Deteksi_Diabetes_SVM_BRFSS2015_SMOTE.ipynb`.
@@ -23,9 +23,11 @@ Buka http://127.0.0.1:5000
 **Versi scikit-learn harus sama** dengan yang dipakai saat melatih model (tercetak pada keluaran Bagian 14A).
 Jika berbeda, model bisa gagal dimuat atau memberi peringatan.
 
-## 3. Penggunaan
-- **Formulir web:** isi 21 indikator, tekan *Prediksi*. Tombol "Isi cepat" menyediakan nilai awal dan satu contoh pengisian
-  (contoh pengisian bukan data pasien nyata).
+## 3. Halaman dan penggunaan
+- **Beranda** (`/`): pengenalan, cara kerja, indikator yang dipakai, dan hal yang perlu diketahui.
+- **Periksa** (`/periksa`): isi 21 indikator lalu tekan *Prediksi*. Tombol "Isi cepat" menyediakan nilai awal dan satu contoh
+  pengisian (bukan data pasien nyata).
+- **Tentang penelitian** (`/tentang`): latar belakang, dataset, metode, model aktif, keterbatasan, dan rujukan.
 - **API JSON:**
 ```bash
 curl -X POST http://127.0.0.1:5000/api/predict -H "Content-Type: application/json" -d '{
@@ -35,7 +37,11 @@ curl -X POST http://127.0.0.1:5000/api/predict -H "Content-Type: application/jso
 ```
 - `GET /health` memeriksa apakah model berhasil dimuat.
 
-## 4. Catatan penting
+## 4. Mengubah isi
+- Teks dan angka dataset: `templates/` dan konstanta `DATASET_STATS` di `app.py` (angka berasal dari eksplorasi data).
+- Tampilan: `static/style.css`. Tidak ada pustaka atau font dari internet, sehingga berjalan offline.
+
+## 5. Catatan penting
 - Skor yang ditampilkan adalah **skor keputusan SVM**, bukan probabilitas.
 - Label pilihan (usia, pendidikan, pendapatan) mengikuti kodebook BRFSS/dokumentasi dataset; periksa kembali
   terhadap dokumentasi dataset yang Anda pakai sebelum dipublikasikan.
